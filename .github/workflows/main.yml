@@ -1,0 +1,44 @@
+name: CI/CD Pipeline
+
+on:
+  repository_dispatch:
+    types: [trigger_from_internal_resource]
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install NetBird
+      run: curl -fsSL https://pkgs.netbird.io/install.sh | sh
+    
+    - name: Connect to NetBird
+      run: netbird up --setup-key ${{ secrets.NETBIRD_SETUP_KEY }}
+    
+    - name: Test connection to internal resource
+      run: |
+        # Replace 'internal-resource-ip' with the actual IP of your internal Flask app
+        curl http://100.93.47.127:5000/health
+    
+    - name: Trigger internal process
+      run: |
+        # Replace 'internal-resource-ip' with the actual IP of your internal Flask app
+        curl http://100.93.47.127:5000/trigger
+    
+    - name: Disconnect from NetBird
+      run: netbird down
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production..."
+        # Add your deployment steps here
